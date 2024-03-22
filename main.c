@@ -1386,6 +1386,26 @@ void draw_bird(int x, int y) {
 	}
 }
 
+void draw_reverse_bird(int x, int y) {
+	int number = 0;
+	int inital = 50;
+	int rows = 1;
+	while(rows<38) {
+		for(int i = inital-1; i>=(inital-50); i--) {
+			if(i==(inital-50)) {
+				y = y+1;
+				number = 49;
+			}
+
+			plot_pixel(x+number,y,Bird[i]);
+			number++;
+		}
+		number = 0;
+		inital+=50;
+		rows++;
+	}
+	
+}
 int main(void)
 {
     volatile int * pixel_ctrl_ptr = (int *)0xFF203020;
@@ -1413,21 +1433,38 @@ int main(void)
     while (1)
     {
         /* Erase any boxes and lines that were drawn in the last iteration */
-
-
-        // code for drawing the boxes and lines (not shown)
-        // code for updating the locations of boxes (not shown)
-		clear_screen();
-		draw_circle(a,b);
-		draw_bird(x,y);
-        wait_for_vsync(); // swap front and back buffers on VGA vertical sync
-        pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
-		x = x+1;
-		y = y+1;
-		if(((x+50)==319)||((y+38)==239)) {
+		while((x+50)<=319) {
+			clear_screen();
+			draw_circle(a,b);
+			draw_bird(x,y);
+        	wait_for_vsync(); // swap front and back buffers on VGA vertical sync
+        	pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
+			x = x+1;
+			y = y+1;
+			if((y+38)==239) {
+				break;
+			}
+		}
+		
+		
+		while(x>=0) {
+			if((y+38)==239) {
+				break;
+			}
+			clear_screen();
+			draw_circle(a,b);
+			draw_reverse_bird(x,y);
+			wait_for_vsync(); // swap front and back buffers on VGA vertical sync
+        	pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
+			x = x-2;
+			y = y+1;
+			if((y+38)==239) {
+				break;
+			}
+		}
+		
+		if((y+38)==239) {
 			break;
 		}
 	}
 }
-
-	
