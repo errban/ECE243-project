@@ -1355,26 +1355,11 @@ const unsigned short Circle[19200] = {
 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D,   // 0x4B00 (19200) pixels
 };
 
-bool clicked = false;
-void interrupt_handler(void);
-void interrupt_handler(void) {
-	int PS2_data;
-	char byte1 = 0, byte2 = 0, byte3 = 0;
-	byte1 = byte2;
-	byte2 = byte3;
-	byte3 = PS2_data & 0xFF;
-	if ((byte2 == (char)0xAA) && (byte3 == (char)0x00)) {
-		*(PS2_ptr) = 0xF4
-	}
-	if(byte3==29) {
-		clicked = true;
-		if(forward) {
-			clear_screen();
-			draw_bird(X, Y-1);
-		}
-		
-	}
-}
+volatile int X, Y;
+volatile bool forward = true;
+volatile bool clicked = false;
+volatile int * PS2_ptr = (int *) 0xFF200100;
+ volatile int * pixel_ctrl_ptr = (int *)0xFF203020;
 
 void the_reset(void) __attribute__((section(".reset")));
 void the_reset(void)
@@ -1550,13 +1535,42 @@ void draw_reverse_bird(int x, int y) {
 	}
 	
 }
+
+void interrupt_handler(void);
+void interrupt_handler(void) {
+	int PS2_data = *(PS2_ptr);
+	char byte1 = 0, byte2 = 0, byte3 = 0;
+	byte1 = byte2;
+	byte2 = byte3;
+	byte3 = PS2_data & 0xFF;
+	if ((byte2 == (char)0xAA) && (byte3 == (char)0x00)) {
+		*(PS2_ptr) = 0xF4;
+	}
+	
+	if(byte3==0x29&&byte2!=0xF0&&byte2!=0x29) {
+		Y = Y-25;
+		if(forward) {
+			clear_screen();
+			draw_circle(80,60);
+			draw_bird(X, Y);
+			wait_for_vsync(); // swap front and back buffers on VGA vertical sync
+        	pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
+		} else {
+			clear_screen();
+			draw_circle(80,60);
+			draw_reverse_bird(X, Y);
+			wait_for_vsync(); // swap front and back buffers on VGA vertical sync
+        	pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
+		}
+		
+	} 
+}
+
 int main(void)
 {
-    volatile int * pixel_ctrl_ptr = (int *)0xFF203020;
-	volatile int * PS2_ptr = (int *) 0xFF200100;
 	*(PS2_ptr+1) = 1;
 	
-	NIOS2_WRITE_IENABLE(0x40);
+	NIOS2_WRITE_IENABLE(0x80);
 	NIOS2_WRITE_STATUS(1);
     // declare other variables(not shown)
     // initialize location and direction of rectangles(not shown)
@@ -1564,6 +1578,8 @@ int main(void)
 	int y = 101;
 	int a = 80;
 	int b = 60;
+	X = x;
+	Y = y;
 
     /* set front pixel buffer to Buffer 1 */
     *(pixel_ctrl_ptr + 1) = (int) &Buffer1; // first store the address in the  back buffer
@@ -1582,40 +1598,47 @@ int main(void)
     while (1)
     {
         /* Erase any boxes and lines that were drawn in the last iteration */
-		while((x+50)<=319) {
+		while((X+50)<=319) {
+			forward = true;
 			clear_screen();
 			draw_circle(a,b);
-			draw_bird(x,y);
+			draw_bird(X,Y);
         	wait_for_vsync(); // swap front and back buffers on VGA vertical sync
         	pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
-			x = x+1;
-			y = y+1;
-			if((y+38)==239) {
+			X = x = X+1;
+			Y = y = Y+1;
+			if((Y+38)==239) {
 				break;
 			}
 		}
 		
 		
-		while(x>=0) {
-			if((y+38)==239) {
+		while(X>=0) {
+			forward = false;
+			if((Y+38)==239) {
 				break;
 			}
 			clear_screen();
 			draw_circle(a,b);
-			draw_reverse_bird(x,y);
+			draw_reverse_bird(X,Y);
 			wait_for_vsync(); // swap front and back buffers on VGA vertical sync
         	pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
-			x = x-2;
-			y = y+1;
-			if((y+38)==239) {
+			X = x = X-2;
+			Y = y = Y+1;
+			if((Y+38)==239) {
 				break;
 			}
 		}
 		
-		if((y+38)==239) {
+		if((Y+38)==239) {
 			break;
 		}
 	}
 }
 
+	
+	
+	
+	
+	
 	
