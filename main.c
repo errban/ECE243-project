@@ -1355,14 +1355,21 @@ const unsigned short Circle[19200] = {
 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D, 0xEF5D,   // 0x4B00 (19200) pixels
 };
 
-bool clicked = true;
+bool clicked = false;
 void interrupt_handler(void);
 void interrupt_handler(void) {
-	int PS2_data, RVALID;
+	int PS2_data;
 	char byte1 = 0, byte2 = 0, byte3 = 0;
 	byte1 = byte2;
 	byte2 = byte3;
 	byte3 = PS2_data & 0xFF;
+	if ((byte2 == (char)0xAA) && (byte3 == (char)0x00)) {
+		*(PS2_ptr) = 0xF4
+	}
+	if(byte3==29) {
+		clicked = true;
+		
+	}
 }
 
 void the_reset(void) __attribute__((section(".reset")));
