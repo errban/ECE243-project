@@ -1369,7 +1369,8 @@ void interrupt_handler(void) {
 	if(byte3==29) {
 		clicked = true;
 		if(forward) {
-			draw_bird(int x, int y)
+			clear_screen();
+			draw_bird(X, Y-1);
 		}
 		
 	}
