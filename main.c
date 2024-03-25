@@ -1359,7 +1359,8 @@ volatile int X, Y;
 volatile bool forward = true;
 volatile bool clicked = false;
 volatile int * PS2_ptr = (int *) 0xFF200100;
- volatile int * pixel_ctrl_ptr = (int *)0xFF203020;
+volatile int * pixel_ctrl_ptr = (int *)0xFF203020;
+char byte1 = 0, byte2 = 0, byte3 = 0;
 
 void the_reset(void) __attribute__((section(".reset")));
 void the_reset(void)
@@ -1539,7 +1540,6 @@ void draw_reverse_bird(int x, int y) {
 void interrupt_handler(void);
 void interrupt_handler(void) {
 	int PS2_data = *(PS2_ptr);
-	char byte1 = 0, byte2 = 0, byte3 = 0;
 	byte1 = byte2;
 	byte2 = byte3;
 	byte3 = PS2_data & 0xFF;
@@ -1547,17 +1547,17 @@ void interrupt_handler(void) {
 		*(PS2_ptr) = 0xF4;
 	}
 	
-	if(byte3==0x29&&byte2!=0xF0&&byte2!=0x29) {
-		Y = Y-25;
+	if((byte3==0x29)&&(byte2!=0xF0)&&(byte2!=0x29)) {
+		Y = Y-10;
+		clear_screen();
+		draw_circle(80,60);
 		if(forward) {
-			clear_screen();
-			draw_circle(80,60);
+			X+=5;
 			draw_bird(X, Y);
 			wait_for_vsync(); // swap front and back buffers on VGA vertical sync
         	pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
 		} else {
-			clear_screen();
-			draw_circle(80,60);
+			X-=5;
 			draw_reverse_bird(X, Y);
 			wait_for_vsync(); // swap front and back buffers on VGA vertical sync
         	pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
@@ -1597,7 +1597,6 @@ int main(void)
 
     while (1)
     {
-        /* Erase any boxes and lines that were drawn in the last iteration */
 		while((X+50)<=319) {
 			forward = true;
 			clear_screen();
@@ -1605,8 +1604,8 @@ int main(void)
 			draw_bird(X,Y);
         	wait_for_vsync(); // swap front and back buffers on VGA vertical sync
         	pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
-			X = x = X+1;
-			Y = y = Y+1;
+			X = x = X+5;
+			Y = y = Y+5;
 			if((Y+38)==239) {
 				break;
 			}
@@ -1623,8 +1622,8 @@ int main(void)
 			draw_reverse_bird(X,Y);
 			wait_for_vsync(); // swap front and back buffers on VGA vertical sync
         	pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
-			X = x = X-2;
-			Y = y = Y+1;
+			X = x = X-5;
+			Y = y = Y+5;
 			if((Y+38)==239) {
 				break;
 			}
@@ -1635,10 +1634,3 @@ int main(void)
 		}
 	}
 }
-
-	
-	
-	
-	
-	
-	
