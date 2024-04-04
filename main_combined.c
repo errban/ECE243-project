@@ -1370,6 +1370,8 @@ typedef struct {
     int y;
 } Coordinate;
 
+int score = 0;
+
 
 void the_reset(void) __attribute__((section(".reset")));
 void the_reset(void)
@@ -1777,10 +1779,11 @@ int main(void)
             }
             else{
                 *(led_ptr) = 0x0;           //otherwise off
+				
             }
             //end of testing
 		}
-		
+		score += 1;					//update score
 		//code for generating and updating random locations of spikes
         index_left = 0;
 
@@ -1842,6 +1845,7 @@ int main(void)
             }
             //end of testing
         }
+		score += 1;					
             
             if((Y+38)==239) {
                 break;
