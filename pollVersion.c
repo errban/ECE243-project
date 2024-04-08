@@ -1749,39 +1749,7 @@ int main(void)
         }
 
 		while((X+50)<=319) {        //forward
-
-			forward = true;
-			clear_screen();
-            display_top_bottom_spikes(0xFF00);
-			draw_circle(a,b);
-			draw_bird(X,Y);
-
-            // code for drawing the random spikes
-            for (int j = 0; j < 2; j++){
-                //check if in bounds and reflect accordingly
-                //draw_spike_left(0, spikes_y[j], 0xFF00);
-                draw_spike_right(319, spikes_y[j], 0xFF00);
-            }
-
-        	wait_for_vsync(); // swap front and back buffers on VGA vertical sync
-        	pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
-			X = x = X+5;
-			Y = y = Y+5;
-			if((Y+38)==239) {
-				break;
-			}
-
-            //testing
-            //if collision, then game end******
-            if (if_collision(X, Y, coordinates_right)){            //if collision, turn on all LEDs
-                *(led_ptr) = 0xFFFF;
-                //*****end game****
-            }
-            else{
-                *(led_ptr) = 0x0;           //otherwise off
-				
-            }
-            //end of testing
+			//end of testing
 			int PS2_data = *(PS2_ptr);
 			byte1 = byte2;
 			byte2 = byte3;
@@ -1813,6 +1781,38 @@ int main(void)
 				}
 
 			} 
+			forward = true;
+			clear_screen();
+            display_top_bottom_spikes(0xFF00);
+			draw_circle(a,b);
+			draw_bird(X,Y);
+
+            // code for drawing the random spikes
+            for (int j = 0; j < 2; j++){
+                //check if in bounds and reflect accordingly
+                //draw_spike_left(0, spikes_y[j], 0xFF00);
+                draw_spike_right(319, spikes_y[j], 0xFF00);
+            }
+
+        	wait_for_vsync(); // swap front and back buffers on VGA vertical sync
+        	pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
+			
+			X = x = X+5;
+			Y = y = Y+5;
+			if((Y+38)==239) {
+				break;
+			}
+
+            //testing
+            //if collision, then game end******
+            if (if_collision(X, Y, coordinates_right)){            //if collision, turn on all LEDs
+                *(led_ptr) = 0xFFFF;
+                //*****end game****
+            }
+            else{
+                *(led_ptr) = 0x0;           //otherwise off
+				
+            }
 		}
 		score += 1;					//update score
 		//code for generating and updating random locations of spikes
@@ -1838,7 +1838,37 @@ int main(void)
         }
 
 		while(X>=0) {       //back
+			int PS2_data = *(PS2_ptr);
+			byte1 = byte2;
+			byte2 = byte3;
+			byte3 = PS2_data & 0xFF;
+			if ((byte2 == (char)0xAA) && (byte3 == (char)0x00)) {
+				*(PS2_ptr) = 0xF4;
+			}
 
+			if((byte3==0x29)&&(byte2!=0xF0)&&(byte2!=0x29)) {
+				Y = Y-10;
+				clear_screen();
+				draw_circle(80,60);
+				display_top_bottom_spikes(0xFF00);
+				for (int j = 0; j < 2; j++){
+					//check if in bounds and reflect accordingly
+					//draw_spike_left(0, spikes_y[j], 0xFF00);
+					draw_spike_left(319, spikes_y[j], 0xFF00);
+				 }
+				if(forward) {
+					X+=5;
+					draw_bird(X, Y);
+					wait_for_vsync(); // swap front and back buffers on VGA vertical sync
+					pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
+				} else {
+					X-=5;
+					draw_reverse_bird(X, Y);
+					wait_for_vsync(); // swap front and back buffers on VGA vertical sync
+					pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
+				}
+
+			} 
             
 
 			forward = false;
