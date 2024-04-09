@@ -4,6 +4,8 @@
 
 #define LED 0xFF200000
 #define KEYS 0xFF200050
+#define HEX3_HEX0_BASE	0xFF200020
+#define HEX5_HEX4_BASE	0xFF200030
 
 #ifndef __NIOS2_CTRL_REG_MACROS__
 #define __NIOS2_CTRL_REG_MACROS__
@@ -11110,6 +11112,30 @@ void clear_screen() {
 	}
 }
 
+void HEX_PS2(char b1, char b2, char b3) {
+	volatile int * HEX3_HEX0_ptr = (int *)HEX3_HEX0_BASE;
+	volatile int * HEX5_HEX4_ptr = (int *)HEX5_HEX4_BASE;
+	/* SEVEN_SEGMENT_DECODE_TABLE gives the on/off settings for all segments in
+	* a single 7-seg display in the DE1-SoC Computer, for the hex digits 0 - F
+	*/
+	unsigned char seven_seg_decode_table[] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07,
+	0x7F, 0x67, 0x77, 0x7C, 0x39, 0x5E, 0x79, 0x71};
+	unsigned char hex_segs[] = {0, 0, 0, 0, 0, 0, 0, 0};
+	unsigned int shift_buffer, nibble;
+	unsigned char code;
+	int i;
+	shift_buffer = (b1 << 8) | (b2 << 4) | b3;
+	for (i = 0; i < 6; ++i) {
+		nibble = shift_buffer & 0x0000000F; // character is in rightmost nibble
+		code = seven_seg_decode_table[nibble];
+		hex_segs[i] = code;
+		shift_buffer = shift_buffer >> 4;
+	}
+/* drive the hex displays */
+*(HEX3_HEX0_ptr) = *(int *)(hex_segs);
+*(HEX5_HEX4_ptr) = *(int *)(hex_segs + 4);
+}
+
 void start_screen();
 void start_screen() {
     int number = 0;
@@ -11392,6 +11418,7 @@ int main(void)
     size = 50;
     index_left = 0;
     index_right = 0;
+	int tens = 0, hundreds = 0;
 	
     while (1)
     {
@@ -11459,6 +11486,11 @@ int main(void)
             //end of testing
 		}
 		score += 1;					//update score
+		if(score==10) {
+			tens+=1;
+			score = 0;
+		}
+		HEX_PS2(hundreds, tens, score);
 
 		//code for generating and updating random locations of spikes
         index_left = 0;
@@ -11514,7 +11546,7 @@ int main(void)
 
             //testing
             //if collision, then game end******
-            if (if_collision(X+10, Y, coordinates_left)){            //if collision, turn on all LEDs
+            if (if_collision(X, Y, coordinates_left)){            //if collision, turn on all LEDs
                 *(led_ptr) = 0xFFFF;
 				//end_screen();
 				end_game = true;
@@ -11527,7 +11559,12 @@ int main(void)
             //end of testing
         }
 
-		score += 1;					
+		score += 1;
+		if(score==10) {
+			tens+=1;
+			score = 0;
+		}
+		HEX_PS2(hundreds, tens, score);
         end:
             if((Y+30)>=239) {
                 //end_screen();
@@ -11545,11 +11582,7 @@ int main(void)
 						*(key_ptr + 3) = key_edge; 
 						goto begin;	
 					}
-					
-					//end_screen();
-					//wait_for_vsync();
 				}
 			}
 	}
-    //end_screen();
 }
