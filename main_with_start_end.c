@@ -11573,12 +11573,14 @@ int main(void)
             }
 
             if (end_game){
+				HEX_PS2(hundreds, tens, score-1);
 				end_screen();
 				wait_for_vsync();
 				NIOS2_WRITE_STATUS(0);
 				while(1){
 					key_edge = *(key_ptr + 3);
 					if (key_edge & 0x1){
+						HEX_PS2(0, 0, 0);
 						*(key_ptr + 3) = key_edge; 
 						goto begin;	
 					}
