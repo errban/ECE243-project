@@ -10967,6 +10967,7 @@ const unsigned short endscreen[76800] = {
 
 
 volatile int X, Y;
+bool end_game = false;
 volatile bool forward = true;
 volatile bool clicked = false;
 volatile int * PS2_ptr = (int *) 0xFF200100;
@@ -11158,6 +11159,10 @@ void draw_bird(int x, int y) {
 			y = y+1;
 			number = 0;
 		}
+		if(Bird[i] == 0xFFFF) {
+			number++;
+			continue;
+		}
 		
 		plot_pixel(x+number,y,Bird[i]);
 		number++;
@@ -11173,6 +11178,10 @@ void draw_reverse_bird(int x, int y) {
 			if(i==(inital-50)) {
 				y = y+1;
 				number = 49;
+			}
+			if(Bird[i] == 0xFFFF) {
+				number++;
+				continue;
 			}
 
 			plot_pixel(x+number,y,Bird[i]);
@@ -11195,6 +11204,9 @@ void interrupt_handler(void) {
 		*(PS2_ptr) = 0xF4;
 	}
 	
+	if(end_game) {
+		return;
+	}
 	if((byte3==0x29)&&(byte2!=0xF0)&&(byte2!=0x29)) {
 		Y = Y-10;
 		clear_screen();
@@ -11322,7 +11334,6 @@ bool if_collision (int x_coord, int y_coord, Coordinate coordinates[]){
 
 int main(void)
 {
-	bool end_game = false;
     int size = 50;
     int index_left = 0;
     int index_right = 0;
@@ -11339,15 +11350,12 @@ int main(void)
     int spikes_y[2];        //y coord of spikes
 	
 	NIOS2_WRITE_IENABLE(0x80);
-	NIOS2_WRITE_STATUS(1);
     // declare other variables(not shown)
     // initialize location and direction of rectangles(not shown)
 	int x = 135;
 	int y = 101;
 	int a = 80;
 	int b = 60;
-	X = x;
-	Y = y;
 
     /* set front pixel buffer to Buffer 1 */
     *(pixel_ctrl_ptr + 1) = (int) &Buffer1; // first store the address in the  back buffer
@@ -11367,6 +11375,7 @@ int main(void)
 	
 	*(key_ptr+3) = 0xffffffff;
 
+	begin:
     while (1){
 		start_screen();
 		key_edge = *(key_ptr + 3);
@@ -11375,7 +11384,15 @@ int main(void)
 			break;	
 		}
 	}
-
+	NIOS2_WRITE_STATUS(1);
+	X = 135;
+	Y = 101;
+	score = 0;
+	end_game = false;
+    size = 50;
+    index_left = 0;
+    index_right = 0;
+	
     while (1)
     {
 
@@ -11420,7 +11437,7 @@ int main(void)
         	pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
 			X = x = X+5;
 			Y = y = Y+5;
-			if((Y+38)==239) {
+			if((Y+30)>=239) {
                 //end_screen();
 				end_game = true;
 				break;
@@ -11432,7 +11449,7 @@ int main(void)
                 *(led_ptr) = 0xFFFF;
 				//end_screen();
 				end_game = true;
-                break;
+                goto end;
                 //*****end game****
             }
             else{
@@ -11468,7 +11485,7 @@ int main(void)
 		while(X>=0) {       //back
 
 			forward = false;
-			if((Y+38)==239) {
+			if((Y+30)>=239) {
                 //end_screen();
                 end_game = true;
 				break;
@@ -11489,7 +11506,7 @@ int main(void)
         	pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
 			X = x = X-5;
 			Y = y = Y+5;
-			if((Y+38)==239) {
+			if((Y+30)>=239) {
 				//end_screen();
                 end_game = true;
 				break;
@@ -11497,7 +11514,7 @@ int main(void)
 
             //testing
             //if collision, then game end******
-            if (if_collision(X, Y, coordinates_left)){            //if collision, turn on all LEDs
+            if (if_collision(X+10, Y, coordinates_left)){            //if collision, turn on all LEDs
                 *(led_ptr) = 0xFFFF;
 				//end_screen();
 				end_game = true;
@@ -11511,21 +11528,28 @@ int main(void)
         }
 
 		score += 1;					
-            
-            if((Y+38)==239) {
+        end:
+            if((Y+30)>=239) {
                 //end_screen();
                 end_game = true;
 				//break;
             }
 
             if (end_game){
-            while(1){
-                end_screen();
-			    wait_for_vsync();
-			    end_screen();
-			    wait_for_vsync();
-            }
-		}
+				end_screen();
+				wait_for_vsync();
+				NIOS2_WRITE_STATUS(0);
+				while(1){
+					key_edge = *(key_ptr + 3);
+					if (key_edge & 0x1){
+						*(key_ptr + 3) = key_edge; 
+						goto begin;	
+					}
+					
+					//end_screen();
+					//wait_for_vsync();
+				}
+			}
 	}
     //end_screen();
 }
