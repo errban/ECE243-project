@@ -11414,6 +11414,8 @@ int main(void)
 	X = 135;
 	Y = 101;
 	score = 0;
+    int y_increment = 5;
+    int x_increment = 5;
 	end_game = false;
     size = 50;
     index_left = 0;
@@ -11428,7 +11430,7 @@ int main(void)
 
         for (int k = 0; k < 2; k++){
             //generate randome y coordinate - with offset so no need to check for in bounds
-            spikes_y[k] = rand() % 214;             
+            spikes_y[k] = (rand() % 190) + 25;             
         
             //storing coord values to check for collisions 
             for (int y = 0; y <= 24; y++) {
@@ -11462,8 +11464,8 @@ int main(void)
 
         	wait_for_vsync(); // swap front and back buffers on VGA vertical sync
         	pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
-			X = x = X+5;
-			Y = y = Y+5;
+			X = x = X+x_increment;
+			Y = y = Y+y_increment;
 			if((Y+30)>=239) {
                 //end_screen();
 				end_game = true;
@@ -11497,7 +11499,7 @@ int main(void)
 
         for (int k = 0; k < 2; k++){
             //generate randome y coordinate - with offset so no need to check for in bounds
-            spikes_y[k] = rand() % 214;             
+            spikes_y[k] = (rand() % 190) + 25;      
         
             //storing coord values to check for collisions 
             for (int y = 0; y <= 24; y++) {
@@ -11536,8 +11538,8 @@ int main(void)
 
 			wait_for_vsync(); // swap front and back buffers on VGA vertical sync
         	pixel_buffer_start = *(pixel_ctrl_ptr + 1); // new back buffer
-			X = x = X-5;
-			Y = y = Y+5;
+			X = x = X-x_increment;
+			Y = y = Y+y_increment;
 			if((Y+30)>=239) {
 				//end_screen();
                 end_game = true;
@@ -11560,6 +11562,10 @@ int main(void)
         }
 
 		score += 1;
+        if(x_increment<10) {
+            x_increment++;
+            y_increment++;
+        }
 		if(score==10) {
 			tens+=1;
 			score = 0;
